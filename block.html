@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="pragma" content="no-cache">
+  <meta charset="UTF-8">
+  <script src="Util.js"></script>
+  <script src="Rect.js"></script>
+  <script src="Circle.js"></script>
+  <script src="Block.js"></script>
+  <script>
+    var block;
+
+    function init() {
+      block = new Block(document.getElementById('canvas'));
+      block.setSize(window.innerWidth, window.innerHeight);
+      block.add(new Circle({
+        center: { x: 250, y: 250 },
+        r: 200,
+        fillColor: 'blue'
+      }));
+      block.add(new Rect({
+        rect: { x: 220, y: 125, w: 100, h: 80 },
+        fillColor: 'green'
+      }));
+      block.add(new Rect({
+        rect: { x: 20, y: 225, w: 100, h: 80 },
+        fillColor: 'green'
+      }));
+      block.add(new Rect({
+        rect: { x: 320, y: 225, w: 100, h: 80 },
+        fillColor: 'green'
+      }));
+
+      block.draw();
+    }
+  </script>
+</head>
+<body onload="init()" style="margin:0px;padding:0px;">
+  <canvas id="canvas"></canvas>
+</body>
+</html>
