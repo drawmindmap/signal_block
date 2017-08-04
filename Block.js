@@ -34,6 +34,7 @@ Block.prototype.init = function () {
   });
   var lastPoint, shape, lastShape;
   canvas.addEventListener('mousedown', function (e) {
+    e.preventDefault();
     lastShape = shape = self.getShapeAt(e);
     lastPoint = {
       x: e.clientX,

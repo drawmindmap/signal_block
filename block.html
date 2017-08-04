@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <script src="Util.js"></script>
   <script src="Rect.js"></script>
+  <script src="Polygon.js"></script>
   <script src="Circle.js"></script>
   <script src="Block.js"></script>
   <script>
@@ -16,26 +17,60 @@
       block.add(new Circle({
         center: { x: 250, y: 250 },
         r: 200,
-        fillColor: 'blue'
+        fillColor: 'rgba(0, 0, 255, 0.5)'
       }));
       block.add(new Rect({
-        rect: { x: 220, y: 125, w: 100, h: 80 },
-        fillColor: 'green'
-      }));
-      block.add(new Rect({
-        rect: { x: 20, y: 225, w: 100, h: 80 },
-        fillColor: 'green'
-      }));
-      block.add(new Rect({
-        rect: { x: 320, y: 225, w: 100, h: 80 },
-        fillColor: 'green'
+        rect: { x: 280, y: 210, w: 100, h: 80 },
+        fillColor: 'rgba(0, 255, 0, 0.5)'
       }));
 
       block.draw();
+
+      initCreatePolygonListener();
+    }
+
+    function enterCreatePolygonMode () {
+      block._createPolygon = true;
+    }
+
+    function initCreatePolygonListener () {
+      var lastPoint;
+      block.canvas.addEventListener('mousedown', function (e) {
+        if (!block._createPolygon) {
+          return;
+        }
+        e.preventDefault();
+        lastPoint = block.getPointAt(e);
+        if (!block._polygon) {
+          block._polygon = new Polygon({
+            points: [ lastPoint ],
+            fillColor: 'rgba(0, 255, 0, 0.5)'
+          });
+          block.add(block._polygon);
+        } else {
+          block._polygon.addPoint(lastPoint);
+        }
+        block.draw();
+      });
+      block.canvas.addEventListener('dblclick', function (e) {
+        if (!block._createPolygon) {
+          return;
+        }
+        lastPoint = block.getPointAt(e);
+        block._polygon.addPoint(lastPoint);
+        block.draw();
+
+        block._createPolygon = false;
+        block._polygon = null;
+        return false;
+      });
     }
   </script>
 </head>
 <body onload="init()" style="margin:0px;padding:0px;">
+  <div>
+    <button onclick="enterCreatePolygonMode()">Create Polygon</button>
+  </div>
   <canvas id="canvas"></canvas>
 </body>
 </html>

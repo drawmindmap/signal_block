@@ -1,5 +1,20 @@
 function Rect(data) {
   this.data = data;
+  var rect = data.rect;
+  data.points = [{
+    x: rect.x,
+    y: rect.y
+  }, {
+    x: rect.x + rect.w,
+    y: rect.y
+  }, {
+    x: rect.x + rect.w,
+    y: rect.y + rect.h
+  }, {
+    x: rect.x,
+    y: rect.y + rect.h
+  }];
+  data.clockwise = Util.isPolygonClockwise(data.points);
 }
 
 Rect.prototype.draw = function (ctx, block) {
@@ -17,11 +32,15 @@ Rect.prototype.draw = function (ctx, block) {
 
 Rect.prototype.contain = function (point) {
   var data = this.data;
-  return Util.containsPoint(data.rect, point);
+  return Util.rectContainsPoint(data.rect, point);
 };
 
 Rect.prototype.offset = function (offsetx, offsety) {
   var data = this.data;
+  data.points.forEach(function (point) {
+    point.x += offsetx;
+    point.y += offsety;
+  });
   data.rect.x += offsetx;
   data.rect.y += offsety;
 };

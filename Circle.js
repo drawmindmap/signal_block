@@ -8,47 +8,65 @@ Circle.prototype.draw = function (ctx, block) {
     shapes = block.shapes,
     center = data.center,
     r = data.r,
-    rect, points, blocked;
-  block.shapes.forEach(function (shape) {
-    if (!(shape instanceof Rect)) {
+    blocked;
+  shapes = shapes.filter(function (shape) {
+    if (!(shape instanceof Circle)) {
+      if (Util.polygonContainsPoint(shape.data.points, center)) {
+        blocked = true;
+      }
+      return true;
+    }
+    return false;
+  });
+
+  if (blocked) {
+    return;
+  }
+
+  shapes.forEach(function (shape) {
+    if (shape.data.points.length < 2) {
       return;
     }
-    rect = shape.data.rect;
-    if (Util.containsPoint(rect, center)) {
-      blocked = true;
-    }
-    points = [{
-        point: {
-          x: rect.x,
-          y: rect.y
-        }
-      }, {
-        point: {
-          x: rect.x + rect.w,
-          y: rect.y
-        }
-      }, {
-        point: {
-          x: rect.x + rect.w,
-          y: rect.y + rect.h
-        }
-      }, {
-        point: {
-          x: rect.x,
-          y: rect.y + rect.h
-        }
-      }];
+    var points = shape.data.points.map(function (point, index) {
+      return { point: point };
+    });
     points.forEach(function (point) {
-      point.angle = Util.getAngle(center, point.point);
+      point._angle = Util.getAngle(center, point.point);
+      if (point._angle < 0) {
+        point.angle = point._angle + Math.PI * 2;
+      } else {
+        point.angle = point._angle;
+      }
     });
     var minIndex = -1,
       maxIndex = -1,
-      between = false;
-    if (rect.x + rect.w > center.x &&
-      rect.y <= center.y &&
-      rect.y + rect.h >= center.y) {
-      minIndex = 3;
-      maxIndex = 0;
+      _minIndex = -1,
+      _maxIndex = -1,
+      between = false,
+      minPoint, maxPoint;
+    points.forEach(function (point, index) {
+      if (_minIndex < 0) {
+        _minIndex = index;
+      } else {
+        if (point._angle < points[_minIndex]._angle) {
+          _minIndex = index;
+        }
+      }
+      if (_maxIndex < 0) {
+        _maxIndex = index;
+      } else {
+        if (point._angle > points[_maxIndex]._angle) {
+          _maxIndex = index;
+        }
+      }
+    });
+    minPoint = points[_minIndex].point;
+    maxPoint = points[_maxIndex].point;
+    if (Math.max(minPoint.x, maxPoint.x) > center.x &&
+        ((minPoint.y <= center.y && center.y <= maxPoint.y) ||
+          (maxPoint.y <= center.y && center.y <= minPoint.y))) {
+      minIndex = _minIndex;
+      maxIndex = _maxIndex;
       between = true;
     } else {
       points.forEach(function (point, index) {
@@ -67,23 +85,65 @@ Circle.prototype.draw = function (ctx, block) {
           }
         }
       });
+      minPoint = points[minIndex].point;
+      maxPoint = points[maxIndex].point;
+    }
+
+    ctx.strokeStyle = 'red';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(minPoint.x, minPoint.y);
+
+    var count = 50,
+      startAngle = between ? points[minIndex]._angle : points[minIndex].angle,
+      endAngle = between ? points[maxIndex]._angle : points[maxIndex].angle,
+      delta = (endAngle - startAngle) / count;
+    for (var i = 0; i <= count; i++) {
+      var circlePoint = getPointOnCircle(center, r, startAngle + delta * i);
+      ctx.lineTo(circlePoint.x, circlePoint.y);
+    }
+    // ctx.arc(center.x, center.y, r, points[minIndex].angle, points[maxIndex].angle, between);
+
+    ctx.lineTo(maxPoint.x, maxPoint.y);
+    var i = maxIndex,
+      minddleIndex = maxIndex;
+    while(minddleIndex !== minIndex) {
+      if (shape.data.clockwise) {
+        i++;
+      } else {
+        i--;
+      }
+      minddleIndex = (i + points.length) % points.length;
+      ctx.lineTo(points[minddleIndex].point.x, points[minddleIndex].point.y);
+    }
+    ctx.lineTo(minPoint.x, minPoint.y);
+    ctx.stroke();
+
+    function getPointOnCircle (center, r, angle) {
+      return {
+        x: center.x + r * Math.cos(angle),
+        y: center.y + r * Math.sin(angle)
+      };
     }
 
     ctx.beginPath();
-    ctx.moveTo(points[minIndex].point.x, points[minIndex].point.y);
-    ctx.arc(center.x, center.y, r, points[minIndex].angle, points[maxIndex].angle, !between);
-    ctx.lineTo(points[maxIndex].point.x, points[maxIndex].point.y);
-    if ((minIndex + 1) % 4 !== maxIndex) {
-      var minddleIndex = (maxIndex + 1) % 4;
+    ctx.moveTo(minPoint.x, minPoint.y);
+    ctx.arc(center.x, center.y, r, points[minIndex].angle, points[maxIndex].angle, true);
+    ctx.lineTo(maxPoint.x, maxPoint.y);
+    var i = maxIndex,
+      minddleIndex = maxIndex;
+    while(minddleIndex !== minIndex) {
+      if (shape.data.clockwise) {
+        i++;
+      } else {
+        i--;
+      }
+      minddleIndex = (i + points.length) % points.length;
       ctx.lineTo(points[minddleIndex].point.x, points[minddleIndex].point.y);
     }
-    ctx.lineTo(points[minIndex].point.x, points[minIndex].point.y);
+    ctx.lineTo(minPoint.x, minPoint.y);
     ctx.clip();
   });
-
-  if (blocked) {
-    return;
-  }
 
   ctx.beginPath();
   ctx.fillStyle = data.fillColor;
